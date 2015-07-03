@@ -290,6 +290,12 @@ var api = {
 			}, timeout);
 		}
 	},
+	refresh_csrf: function(){
+		var url = 'http://music.163.com/api/login/token/refresh?csrf_token=';
+		api.httpRequest('POST', url, '', true, function(r){
+			console.log(r);
+		}, 5000);
+	},
 	song: function(id){
 		id = Number(id);
 		playingid = id;
