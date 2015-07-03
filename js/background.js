@@ -41,6 +41,11 @@ window.onerror = function(){
 	setTimeout(function(){window.location.reload();}, 1000);
 }
 
+var 比较播放顺序 = function(a, b){
+	if (a == b) return 0;
+	return playlist.indexOf(a.id) > playlist.indexOf(b.id) ? 1 : -1;
+};
+
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse){
 		if(request.action == 'pause'){
@@ -55,7 +60,7 @@ chrome.runtime.onMessage.addListener(
 			playnext(true);
 		}
 		else if(request.action == 'list'){
-			chrome.runtime.sendMessage({b_list: songs, p_list: playlist, playingid: playingid});
+			chrome.runtime.sendMessage({b_list: songs.sort(比较播放顺序), p_list: playlist, playingid: playingid});
 		}
 		else if(request.action == 'update'){
 			songs = new Array();
