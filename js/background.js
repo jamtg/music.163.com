@@ -210,7 +210,7 @@ function addtolist(ids, callback){
 		api.songurls(newlist, 0, callback);
 	}
 	else{
-		callback();
+		callback && callback();
 	}
 }
 
