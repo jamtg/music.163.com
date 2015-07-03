@@ -477,7 +477,7 @@ var ui = {
 			document.getElementById('main').appendChild(songlistbox);
 			var songlistlink = document.createElement('a');
 			songlistlink.href = '#'+(play?'play':'song')+'-'+songlist[i].id;
-			songlistlink.className = ((play&&playingid==songlist[i].id)?'songlinkplay':'songlink');
+			songlistlink.className = playingid==songlist[i].id?'songlinkplay':'songlink';
 			if(play){
 				songlistlink.setAttribute('play', 'true');
 			}
@@ -496,7 +496,7 @@ var ui = {
 			songlistlink.appendChild(songlistinfo);
 			var songlistremove = document.createElement('a');
 			songlistremove.className = 'listrightbtn';
-			songlistremove.href = '#'+(play?'remove':'add')+'-'+songlist[i].id;
+			songlistremove.href = '#'+(play || playingid == songlist[i].id ?'remove':'add')+'-'+songlist[i].id;
 			songlistlink.appendChild(songlistremove);
 		}
 	},
