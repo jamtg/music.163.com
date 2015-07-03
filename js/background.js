@@ -2,6 +2,7 @@ var playlist = new Array();
 var playingid = 0;
 var lastlogid = 0;
 var chkst, chkdr;
+var csrf = '';
 var playing = false;
 var playmode = 'all';
 var rndlst = new Array();
@@ -120,6 +121,28 @@ document.getElementById('song').onended = function(){
 	console.log('ended');
 }
 */
+
+if(chrome.cookies) {
+	chrome.cookies.get(
+		{url: 'http://music.163.com/', name: '__csrf'},
+		function(c){
+			console.log(c);
+			if(c && c.value) csrf = c.value;
+		}
+	);
+
+	chrome.cookies.onChanged.addListener(
+		function(r){
+			if(!r.cookie) return;
+			if(r.removed) return;
+			var c = r.cookie;
+			if(c.name == '__csrf') {
+				csrf = c.value;
+				console.log(r);
+			}
+		}
+	);
+}
 
 function mkrandomlist(){
 	var randomlist = new Array();
