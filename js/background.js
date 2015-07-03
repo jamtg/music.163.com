@@ -1,5 +1,6 @@
 var playlist = new Array();
 var playingid = 0;
+var lastlogid = 0;
 var chkst, chkdr;
 var playing = false;
 var playmode = 'all';
@@ -49,6 +50,7 @@ var 比较播放顺序 = function(a, b){
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse){
 		if(request.action == 'pause'){
+			api.songlog(true);
 			playing = false;
 			document.getElementById('song').pause();
 		}
@@ -71,6 +73,7 @@ chrome.runtime.onMessage.addListener(
 			chrome.storage.sync.set({'mode': playmode});
 		}
 		else if(request.song){
+			api.songlog(true);
 			playing = true;
 			addtolist([request.song], function(){
 				api.song(request.song);
@@ -80,6 +83,7 @@ chrome.runtime.onMessage.addListener(
 			});
 		}
 		else if(request.play){
+			api.songlog(true);
 			playing = true;
 			addtolist([request.play], function(){
 				api.song(request.play);
@@ -95,6 +99,7 @@ chrome.runtime.onMessage.addListener(
 			document.getElementById('song').volume = sound;
 		}
 		else if(request.remove){
+			if(request.remove == playingid) api.songlog(true);
 			delfromlist(request.remove);
 			chrome.runtime.sendMessage({action: 'playlist'});
 		}
@@ -133,6 +138,7 @@ function mkrandomlist(){
 }
 
 function playnext(manual){
+	api.songlog(manual);
 	if(!playlist.length){
 		playingid = 0;
 		playing = false;
@@ -312,6 +318,30 @@ var api = {
 			}
 		}, 5000);
 	},
+	songlog: function(manual){
+		if(!playingid) return;
+		if(lastlogid == playingid) return;
+		lastlogid = playingid;
+		var url = 'http://music.163.com/api/log/web?csrf_token=';
+		var secs = song.currentTime;
+		//secs = secs > 1 ? secs - 1 : 0;
+		var j = encodeURIComponent(JSON.stringify(
+			{
+				"type":"song",
+				"wifi": 0,
+				"download": 0,
+				"id": playingid,
+				"time": parseInt(secs),
+				"end": manual ? 'ui' : 'playend' // playend, ui, interrupt
+				// "source": "list","sourceId": 歌单编号
+			}
+		));
+		this.httpRequest('POST', url, 'action=play&json='+j, true, function(result){
+			if(result == -1 || result == -2) return;
+			var j = JSON.parse(result);
+			if(j.code != 200) console.log(result);
+		}, 4000);
+	}, //songlog
 	songurls: function(ids, offset, callback){
 		if(!offset){
 			offset = 0;
