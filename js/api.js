@@ -499,6 +499,10 @@ var ui = {
 			songlistremove.href = '#'+(play || playingid == songlist[i].id ?'remove':'add')+'-'+songlist[i].id;
 			songlistlink.appendChild(songlistremove);
 		}
+		setTimeout(function(){
+			var playing = document.getElementsByClassName('songlinkplay');
+			if(playing.length > 0) playing[0].scrollIntoViewIfNeeded();
+		},200);
 	},
 	format: function(artists){
 		var html = '';
