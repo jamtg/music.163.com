@@ -83,6 +83,7 @@ document.getElementById('controlmode').onclick = function(){
 document.getElementById('controlsound').onchange = function(){
 	chrome.runtime.sendMessage({sound: this.value});
 }
+document.getElementById('controlsound').oninput = document.getElementById('controlsound').onchange;
 
 action('playlist');
 
