@@ -346,6 +346,13 @@ var api = {
 			if(result == -1 || result == -2) return;
 			var r = JSON.parse(result || '{}');
 			console && console.log(lastlogid + '\t' + secs + '\t' + (manual ? 'ui' : 'playend') + '\t' + result);
+			if(r.code == 200) {
+				chrome.browserAction.setBadgeText({text: ''});
+				chrome.browserAction.setTitle({title: '网易云音乐'});
+			} else {
+				chrome.browserAction.setBadgeText({text: 'x'});
+				chrome.browserAction.setTitle({title: '播放记录上报异常，请检查网络'});
+			}
 		}, 1000*20);
 	}, //songlog
 	songurls: function(ids, offset, callback){
