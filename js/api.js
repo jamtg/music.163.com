@@ -121,7 +121,7 @@ var api = {
 				showMsg('请求超时，请稍后重试。');
 			}
 			else{
-				result = result.split('<textarea style="display:none;">')[1].split('</textarea>')[0];
+				result = (result.split('<textarea style="display:none;">')[1] || '').split('</textarea>')[0];
 				ui.singer(JSON.parse(result));
 			}
 		}, 5000);
