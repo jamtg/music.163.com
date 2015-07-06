@@ -346,7 +346,7 @@ var api = {
 			if(result == -1 || result == -2) return;
 			var r = JSON.parse(result || '{}');
 			console && console.log(lastlogid + '\t' + secs + '\t' + (manual ? 'ui' : 'playend') + '\t' + result);
-		}, 4000);
+		}, 1000*20);
 	}, //songlog
 	songurls: function(ids, offset, callback){
 		if(!offset){
