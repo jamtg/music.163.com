@@ -7,9 +7,6 @@ var showmsgcount;
 var lasthash = location.hash;
 
 window.onhashchange = function(){
-	if(!lasthash && location.hash=='#playlist'){
-		return;
-	}
 	lasthash = location.hash;
 	action(location.hash.substr(1));
 }
@@ -266,3 +263,5 @@ function showMsg(msg){
 		setTimeout(function(){document.getElementById('msg').style.display = 'none';},200);
 	}, 3000);
 }
+
+location.hash = '#playlist';
