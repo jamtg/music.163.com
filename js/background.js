@@ -344,7 +344,7 @@ var api = {
 		));
 		this.httpRequest('POST', url, 'action=play&json='+j, true, function(result){
 			if(result == -1 || result == -2) return;
-			var j = JSON.parse(result);
+			var r = JSON.parse(result || '{}');
 			console && console.log(lastlogid + '\t' + secs + '\t' + (manual ? 'ui' : 'playend') + '\t' + result);
 		}, 4000);
 	}, //songlog
