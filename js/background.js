@@ -55,6 +55,7 @@ chrome.runtime.onMessage.addListener(
 			document.getElementById('song').pause();
 		}
 		else if(request.action == 'play'){
+			if(!playingid) return playnext(true);
 			playing = true;
 			document.getElementById('song').play();
 		}
@@ -148,7 +149,7 @@ function playnext(manual){
 		return;
 	}
 	var listindex = playlist.indexOf(playingid);
-	if(listindex == -1){
+	if(listindex == -1 && playingid){
 		listindex = 0;
 	}
 	switch(playmode){

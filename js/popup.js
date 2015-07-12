@@ -40,9 +40,6 @@ document.getElementById('controlstop').onclick = function(){
 }
 
 document.getElementById('controlplay').onclick = function(){
-	if(!playingid){
-		return;
-	}
 	if(this.getAttribute('pause') == 'true'){
 		this.setAttribute('pause', 'false');
 		chrome.runtime.sendMessage({action: 'pause'});
