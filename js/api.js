@@ -122,7 +122,7 @@ var api = {
 			}
 			else{
 				result = (result.split('<textarea style="display:none;">')[1] || '').split('</textarea>')[0];
-				ui.singer(JSON.parse(result));
+				ui.singer(JSON.parse(result || '[]'));
 			}
 		}, 5000);
 	},
