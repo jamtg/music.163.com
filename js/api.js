@@ -1,3 +1,17 @@
+
+if(typeof JSON === 'object') {
+	JSON.parse_ = JSON.parse;
+	JSON.parse = function(s){
+		try {
+			var o = JSON.parse_(s);
+			return o ? o : false;
+		} catch(e) {
+			console.warn('JSON parsing error:', s);
+		}
+		return false;
+	};
+}
+
 var api = {
 	httpRequest: function(method, action, query, urlencoded, callback, timeout){
 		var url = "GET" == method ? (query ? action+"?"+query : action) : action;
