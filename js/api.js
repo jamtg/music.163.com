@@ -460,6 +460,7 @@ var ui = {
 	},
 	song_list: function(songlist, play){
 		if(!play){
+			document.getElementById('main').innerHTML = '';
 			var ids = new Array();
 			for(var i in songlist){
 				ids.push(songlist[i].id);
