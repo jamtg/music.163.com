@@ -327,7 +327,7 @@ var api = {
 	},
 	songlog: function(manual){
 		if(!playingid) return;
-		if(lastlogid == playingid) return;
+		if(lastlogid == playingid && playlist.length > 1 && playmode != 'one') return;
 		lastlogid = playingid;
 		var url = 'http://music.163.com/api/log/web?csrf_token=';
 		var secs = song.currentTime;
