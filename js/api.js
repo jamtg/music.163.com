@@ -459,6 +459,7 @@ var ui = {
 		this.song_list(songlist);
 	},
 	song_list: function(songlist, play){
+		document.getElementById('main').innerHTML = '';
 		if(!play){
 			var ids = new Array();
 			for(var i in songlist){
