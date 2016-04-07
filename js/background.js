@@ -360,10 +360,7 @@ var api = {
 		if(!offset){
 			offset = 0;
 		}
-		var tmpids = new Array();
-		for(var i=0; i<100 && i+offset<ids.length; i++){
-			tmpids.push(ids[i+offset]);
-		}
+		var tmpids = ids.slice(offset, offset + 100);
 		var url = 'http://music.163.com/api/song/detail?ids=['+tmpids.join(',')+']';
 		this.httpRequest('GET', url, null, false, function(result){
 			if(result == -1){
