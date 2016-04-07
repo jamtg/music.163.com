@@ -291,6 +291,19 @@ var api = {
 			}, timeout);
 		}
 	},
+	播放: function(url){
+		if(!url) return playnext();
+		var audio = document.getElementById('song');
+		audio.src = url;
+		audio.load();
+		audio.play();
+	},
+	歌曲入库: function(s){
+		if(!s) return;
+		songs.push(s);
+		urls.id.push(s.id);
+		urls.url.push(s.mp3Url);
+	},
 	refresh_csrf: function(){
 		var url = 'http://music.163.com/api/login/token/refresh?csrf_token=';
 		api.httpRequest('POST', url, '', true, function(r){
@@ -301,29 +314,12 @@ var api = {
 		id = Number(id);
 		playingid = id;
 		if(urls.id.indexOf(id) != -1){
-			var audio = document.getElementById('song');
-			audio.src = urls.url[urls.id.indexOf(id)];
-			audio.play();
+			api.播放(urls.url[urls.id.indexOf(id)]);
 			return;
 		}
-		var url = 'http://music.163.com/api/song/detail?ids=['+id+']';
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				return;
-			}
-			else if(result == -2){
-				return;
-			}
-			else{
-				result = JSON.parse(result);
-				songs.push(result.songs[0]);
-				urls.id.push(id);
-				urls.url.push(result.songs[0].mp3Url);
-				var audio = document.getElementById('song');
-				audio.src = result.songs[0].mp3Url;
-				audio.play();
-			}
-		}, 5000);
+		api.songurls([id], 0, function(){
+			api.song(id);
+		});
 	},
 	songlog: function(manual){
 		if(!playingid) return;
@@ -371,11 +367,7 @@ var api = {
 			}
 			else{
 				result = JSON.parse(result);
-				for(var i in result.songs){
-					songs.push(result.songs[i]);
-					urls.id.push(result.songs[i].id);
-					urls.url.push(result.songs[i].mp3Url);
-				}
+				result.songs.forEach(api.歌曲入库);
 			}
 			if(offset+100<ids.length){
 				api.songurls(ids, offset+100);
