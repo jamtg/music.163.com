@@ -195,6 +195,8 @@ function chkended(){
 		//playing = false;
 		//chrome.runtime.sendMessage({action: 'ended'});
 		playnext();
+	} else if(song.error){
+		playnext(true);
 	}
 	else{
 		clearTimeout(chkst);
@@ -292,7 +294,7 @@ var api = {
 		}
 	},
 	播放: function(url){
-		if(!url) return playnext();
+		if(!url) return playnext(true);
 		var audio = document.getElementById('song');
 		audio.src = url;
 		audio.load();
