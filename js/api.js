@@ -55,71 +55,47 @@ var api = {
 			}, timeout);
 		}
 	},
-	new: function(offset, limit){
-		offset = offset?offser:0;
-		limit = limit?limit:20;
-		var url = 'http://music.163.com/api/album/new?area=ALL&offset='+offset+'&total=true&limit='+limit;
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
-				ui.new(JSON.parse(result));
-			}
+	req: function(method, action, query, urlencoded, cb){
+		return this.httpRequest(method, action, query, urlencoded, function(r){
+			if([-1, -2].indexOf(r) > -1) return showMsg('请求超时，请稍后重试。');
+			cb && cb(r);
 		}, 5000);
+	},
+	get: function(url, cb){
+		return this.req('GET', url, null, false, cb);
+	},
+	post: function(url, data, cb){
+		return this.req('POST', url, data, true, cb);
+	},
+	jsoncb: function(cb){
+		return function(r){
+			var j = JSON.parse(r);
+			if(!j) return showMsg('数据解析异常');
+			if(j.code != 200) return showMsg(j.code + ' ' + j.message);
+			cb && cb(j);
+		};
+	},
+	getjson: function(url, cb){
+		return this.get(url, this.jsoncb(cb));
+	},
+	postjson: function(url, data, cb){
+		return this.post(url, data, this.jsoncb(cb));
+	},
+	new: function(offset, limit){
+		var url = 'http://music.163.com/api/album/new?area=ALL&offset='+(offset||0)+'&total=true&limit='+(limit||20);
+		this.getjson(url, ui.new);
 	},
 	rank: function(order, offset, limit){
-		order = order?order:'hot';
-		offset = offset?offser:0;
-		limit = limit?limit:20;
-		var url = 'http://music.163.com/api/playlist/list?cat=%E6%A6%9C%E5%8D%95&order='+order+'&offset='+offset+'&total='+(offset?'false':'true')+'&limit='+limit;
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
-				ui.rank(JSON.parse(result));
-			}
-		}, 5000);
+		var url = 'http://music.163.com/api/playlist/list?cat=%E6%A6%9C%E5%8D%95&order='+(order||'hot')+'&offset='+(offset||0)+'&total='+(offset?'false':'true')+'&limit='+(limit||20);
+		this.getjson(url, ui.rank);
 	},
 	list: function(order, offset, limit){
-		order = order?order:'hot';
-		offset = offset?offser:0;
-		limit = limit?limit:20;
-		var url = 'http://music.163.com/api/playlist/list?cat=%E5%85%A8%E9%83%A8&order='+order+'&offset='+offset+'&total='+(offset?'false':'true')+'&limit='+limit;
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
-				ui.list(JSON.parse(result));
-			}
-		}, 5000);
+		var url = 'http://music.163.com/api/playlist/list?cat=%E5%85%A8%E9%83%A8&order='+(order||'hot')+'&offset='+(offset||0)+'&total='+(offset?'false':'true')+'&limit='+(limit||20);
+		this.getjson(url, ui.list);
 	},
 	topsinger: function(offset, limit){
-		offset = offset?offser:0;
-		limit = limit?limit:20;
-		var url = 'http://music.163.com/api/artist/top?offset='+offset+'&total=false&limit='+limit+'&csrf_token=';
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
-				ui.topsinger(JSON.parse(result));
-			}
-		}, 5000);
+		var url = 'http://music.163.com/api/artist/top?offset='+(offset||0)+'&total=false&limit='+(limit||20)+'&csrf_token=';
+		this.getjson(url, ui.topsinger);
 	},
 	singer: function(id){
 		if(!Number(id)) {
@@ -127,18 +103,10 @@ var api = {
 			return;
 		}
 		var url = 'http://music.163.com/artist?id='+id;
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
+		this.get(url, function(result){
 				result = (result.split('<textarea style="display:none;">')[1] || '').split('</textarea>')[0];
 				ui.singer(JSON.parse(result || '[]'));
-			}
-		}, 5000);
+		});
 	},
 	album: function(id){
 		if(!Number(id)) {
@@ -146,36 +114,18 @@ var api = {
 			return;
 		}
 		var url = 'http://music.163.com/album?id='+id;
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
+		this.get(url, function(result){
 				var reg = /song\?id=([0-9]+)/ig;
 				var ids = new Array();
 				while(subs = reg.exec(result)){
 					ids.push(subs[1]);
 				}
 				api.song(ids);
-			}
-		}, 5000);
+		});
 	},
 	search: function(s){
 		var url = 'http://music.163.com/api/search/suggest/web?csrf_token=';
-		this.httpRequest('POST', url, 's='+s+'&limit=8', true, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
-				ui.search(JSON.parse(result));
-			}
-		}, 5000);
+		this.postjson(url, 's='+s+'&limit=8', ui.search);
 	},
 	song: function(ids, play, offset, songs){
 		if(!offset){
@@ -189,24 +139,15 @@ var api = {
 			tmpids.push(ids[i+offset]);
 		}
 		var url = 'http://music.163.com/api/song/detail?ids=['+tmpids.join(',')+']';
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
-				result = JSON.parse(result);
+		this.getjson(url, function(result){
 				songs = songs.concat(result.songs);
-			}
 			if(offset+100<ids.length){
 				api.song(ids, play, offset+100, songs);
 			}
 			else{
 				ui.song(songs, play);
 			}
-		}, 5000);
+		});
 	},
 	list_detail: function(id){
 		if(!Number(id)) {
@@ -214,17 +155,7 @@ var api = {
 			return;
 		}
 		var url = 'http://music.163.com/api/playlist/detail?id='+id;
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				showMsg('请求错误，请稍后重试。');
-			}
-			else if(result == -2){
-				showMsg('请求超时，请稍后重试。');
-			}
-			else{
-				ui.list_detail(JSON.parse(result));
-			}
-		}, 5000);
+		this.getjson(url, ui.list_detail);
 	}
 };
 
@@ -337,7 +268,7 @@ var ui = {
 				"artists": result[i].artists
 			});
 		}
-		this.song_list(songlist);
+		ui.song_list(songlist);
 	},
 	search: function(result){
 		result = result.result;
@@ -441,7 +372,7 @@ var ui = {
 				"artists": songs[i].artists
 			});
 		}
-		this.song_list(songlist, play);
+		ui.song_list(songlist, play);
 	},
 	list_detail: function(result){
 		var tracks = result.result.tracks;
@@ -456,7 +387,7 @@ var ui = {
 				"artists": tracks[i].artists
 			});
 		}
-		this.song_list(songlist);
+		ui.song_list(songlist);
 	},
 	song_list: function(songlist, play){
 		document.getElementById('main').innerHTML = '';
@@ -507,7 +438,7 @@ var ui = {
 			songlistlink.appendChild(songlistname);
 			var songlistinfo = document.createElement('div');
 			songlistinfo.className = 'info';
-			songlistinfo.innerHTML = this.format(songlist[i].artists)+' - '+'<a href="#album-'+songlist[i].album.id+'">'+songlist[i].album.name+'</a>';
+			songlistinfo.innerHTML = ui.format(songlist[i].artists)+' - '+'<a href="#album-'+songlist[i].album.id+'">'+songlist[i].album.name+'</a>';
 			songlistlink.appendChild(songlistinfo);
 			var songlistremove = document.createElement('a');
 			songlistremove.className = 'listrightbtn';

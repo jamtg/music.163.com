@@ -11,6 +11,29 @@ var urls = {
 	url:[]
 };
 var songs = new Array();
+var 下架 = new Set();
+
+var serialize = function(obj) { // http://stackoverflow.com/a/1714899
+  var str = [];
+  for(var p in obj)
+    if (obj.hasOwnProperty(p)) {
+      str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+    }
+  return str.join("&");
+};
+
+if(typeof JSON === 'object') {
+	JSON.parse_ = JSON.parse;
+	JSON.parse = function(s){
+		try {
+			var o = JSON.parse_(s);
+			return o ? o : false;
+		} catch(e) {
+			console.warn('JSON parsing error:', s);
+		}
+		return false;
+	};
+}
 
 setHeaders({
 	"urls": [
@@ -140,7 +163,7 @@ function mkrandomlist(){
 
 function playnext(manual){
 	api.songlog(manual);
-	if(!playlist.length){
+	if(!playlist.length || playlist.length <= 下架.size){
 		playingid = 0;
 		playing = false;
 		chrome.runtime.sendMessage({action: 'ended'});
@@ -293,6 +316,32 @@ var api = {
 			}, timeout);
 		}
 	},
+	req: function(method, action, query, urlencoded, cb){
+		return this.httpRequest(method, action, query, urlencoded, function(r){
+			if([-1, -2].indexOf(r) > -1) return console.error('请求超时，请稍后重试。', method, action, query);
+			cb && cb(r);
+		}, 1000 * 10);
+	},
+	get: function(url, cb){
+		return this.req('GET', url, null, false, cb);
+	},
+	post: function(url, data, cb){
+		return this.req('POST', url, data, true, cb);
+	},
+	jsoncb: function(cb){
+		return function(r){
+			var j = JSON.parse(r);
+			console.warn(j);
+			if(!j) console.warn('数据解析异常');
+			cb && cb(j || {}, r);
+		};
+	},
+	getjson: function(url, cb){
+		return this.get(url, this.jsoncb(cb));
+	},
+	postjson: function(url, data, cb){
+		return this.post(url, data, this.jsoncb(cb));
+	},
 	播放: function(url){
 		if(!url) return playnext(true);
 		var audio = document.getElementById('song');
@@ -308,15 +357,20 @@ var api = {
 	},
 	refresh_csrf: function(){
 		var url = 'http://music.163.com/api/login/token/refresh?csrf_token=';
-		api.httpRequest('POST', url, '', true, function(r){
+		api.post(url, '', function(r){
 			console.log(r);
-		}, 5000);
+		});
 	},
 	song: function(id){
 		id = Number(id);
 		playingid = id;
-		if(urls.id.indexOf(id) != -1){
-			api.播放(urls.url[urls.id.indexOf(id)]);
+		var idx = urls.id.indexOf(id);
+		if(idx != -1){
+			var url = urls.url[idx];
+			var rr = 解析日期(url);
+			if(rr[0] && !rr[1]) url = undefined; // 链接过期
+			if(!url && !下架.has(id)) return api.获取链接([id], api.播放);
+			api.播放(url);
 			return;
 		}
 		api.songurls([id], 0, function(){
@@ -341,9 +395,7 @@ var api = {
 				// "source": "list","sourceId": 歌单编号
 			}
 		));
-		this.httpRequest('POST', url, 'action=play&json='+j, true, function(result){
-			if(result == -1 || result == -2) return;
-			var r = JSON.parse(result || '{}');
+		this.postjson(url, 'action=play&json='+j, function(r, result){
 			console && console.log(lastlogid + '\t' + secs + '\t' + (manual ? 'ui' : 'playend') + '\t' + result);
 			if(r.code == 200) {
 				chrome.browserAction.setBadgeText({text: ''});
@@ -352,7 +404,7 @@ var api = {
 				chrome.browserAction.setBadgeText({text: 'x'});
 				chrome.browserAction.setTitle({title: '播放记录上报异常，请检查网络'});
 			}
-		}, 1000*20);
+		});
 	}, //songlog
 	songurls: function(ids, offset, callback){
 		if(!offset){
@@ -360,24 +412,38 @@ var api = {
 		}
 		var tmpids = ids.slice(offset, offset + 100);
 		var url = 'http://music.163.com/api/song/detail?ids=['+tmpids.join(',')+']';
-		this.httpRequest('GET', url, null, false, function(result){
-			if(result == -1){
-				return;
-			}
-			else if(result == -2){
-				return;
-			}
-			else{
-				result = JSON.parse(result);
+		this.getjson(url, function(result){
 				result.songs.forEach(api.歌曲入库);
-			}
 			if(offset+100<ids.length){
 				api.songurls(ids, offset+100);
 			}
 			else if(callback){
 				callback();
 			}
-		}, 5000);
+		});
+	},
+	获取链接: function(ids, cb) {
+		if (!ids) return;
+		var 出错 = new Set(ids);
+		var url = 'http://music.163.com/api/song/enhance/player/url?csrf_token=';
+		api.postjson(url, serialize({
+			ids: JSON.stringify(ids),
+			br: 96000
+		}), function(r) {
+			if (r.code == 200) {
+				r.data.forEach(function(f) {
+					if(!f.url) return;
+					出错.delete(f.id);
+					var idx = urls.id.indexOf(f.id);
+					if (idx != -1) return urls.url[idx] = f.url;
+					urls.id.push(f.id);
+					urls.url.push(f.url);
+				});
+				if(出错.size)下架.add(...出错);
+				if(r.data.length) return cb && cb(r.data[0].url);
+			}
+			cb && cb();
+		});
 	}
 };
 
@@ -395,4 +461,20 @@ function setHeaders(options){
 		}
 		return {requestHeaders: details.requestHeaders};
 	},{urls: options.urls},["requestHeaders", "blocking"]);
+}
+
+function 解析日期(url) {
+	try {
+		var s = url.split('/');
+		if (s.length < 4) return [false];
+		var d = url.split('/')[3];
+		var m = d.match(/\d{14}/);
+		if (!m || m.length !== 1 || m.index !== 0 || m[0] !== d) return [false];
+		arr = [d.substr(0, 4)].concat(d.match(/\d{2}/g).slice(2));
+		arr[1] -= 1;
+		time = new Date(Date.UTC.apply(null, arr) - 1000 * 3600 * 8);
+		return [true, time.getTime() > Date.now()];
+	} catch (e) {
+		return [false];
+	}
 }

@@ -82,15 +82,10 @@ document.getElementById('controlsound').oninput = document.getElementById('contr
 action('playlist');
 
 chrome.runtime.sendMessage({action: 'isplaying'}, function(playing){
-	if(playing.playing){
-		document.getElementById('controlplay').setAttribute('pause', 'true');
-	}
-	else{
-		document.getElementById('controlplay').setAttribute('pause', 'false');
-	}
-	document.getElementById('controlmode').setAttribute('mode', playing.mode);
-	sound = playing.sound;
-	document.getElementById('controlsound').value = sound;
+	if(!playing) return;
+	controlplay.setAttribute('pause', !!playing.playing);
+	controlmode.setAttribute('mode', playing.mode);
+	controlsound.value = playing.sound;
 });
 
 chrome.runtime.onMessage.addListener(
